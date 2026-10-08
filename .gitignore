@@ -48,3 +48,6 @@ desktop.ini
 !.env.example
 !.env.template
 local.properties
+
+# Custom
+/dist/
