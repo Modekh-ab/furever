@@ -1,0 +1,20 @@
+{
+  "modmenu.descriptionTranslation.furever": "A frame-animated running fox for Minecraft menus and loading screens.",
+  "text.furever.title": "Furever settings",
+  "text.furever.enabled": "Enable fox",
+  "text.furever.screen_mode": "Screens",
+  "text.furever.screen_mode.default": "Title and loading screens",
+  "text.furever.screen_mode.all": "Every menu screen",
+  "text.furever.screen_mode.custom": "Selected screen classes",
+  "text.furever.custom_screens": "Additional screen classes",
+  "text.furever.custom_screens.tooltip": "Comma-separated class names for screens not listed above. Reopen settings after visiting a screen to add it to the choices.",
+  "text.furever.x": "Horizontal position (%)",
+  "text.furever.y": "Vertical position (%)",
+  "text.furever.scale": "Scale",
+  "text.furever.speed": "Animation speed",
+  "text.furever.place": "Place fox",
+  "text.furever.position_title": "Place the fox",
+  "text.furever.position_hint": "Click or drag to place the fox",
+  "text.furever.position_arrows": "Arrow keys can move it beyond the screen",
+  "text.furever.done": "Done"
+}

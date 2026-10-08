@@ -1,0 +1,7 @@
+{
+  "required": true,
+  "package": "net.mondless.furever.mixin",
+  "compatibilityLevel": "JAVA_${java_version}",
+  "client": ["SplashOverlayMixin", "LevelLoadingScreenMixin", "TitleScreenMixin"],
+  "injectors": {"defaultRequire": 1}
+}
