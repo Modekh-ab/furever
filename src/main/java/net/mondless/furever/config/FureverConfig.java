@@ -28,6 +28,7 @@ public final class FureverConfig {
 
     public boolean enabled = true;
     public ScreenMode screenMode = ScreenMode.DEFAULT;
+    public MobChoice mob = MobChoice.SPRITE_FOX;
 
     public String customScreens = "";
 
@@ -38,6 +39,8 @@ public final class FureverConfig {
     public float scale = 1.0F;
 
     public float speed = 1.0F;
+    /** Positive values show vanilla models from above; negative values show them from below. */
+    public int cameraAngle = 30;
 
     public static FureverConfig get() {
         return INSTANCE;
@@ -97,10 +100,12 @@ public final class FureverConfig {
 
     public void sanitize() {
         if (screenMode == null) screenMode = ScreenMode.DEFAULT;
+        if (mob == null) mob = MobChoice.SPRITE_FOX;
         xPercent = Math.clamp(xPercent, -100, 200);
         yPercent = Math.clamp(yPercent, -100, 200);
         scale = Math.clamp(scale, 0.25F, 4.0F);
         speed = Math.clamp(speed, 0.1F, 5.0F);
+        cameraAngle = Math.clamp(cameraAngle, -75, 75);
         if (customScreens == null) customScreens = "";
         if (selectedScreens == null) selectedScreens = new LinkedHashSet<>();
     }

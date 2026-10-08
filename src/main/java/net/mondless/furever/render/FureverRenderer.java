@@ -9,6 +9,11 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.util.Identifier;
 //? }
 import net.mondless.furever.config.FureverConfig;
+import net.mondless.furever.config.MobChoice;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.EnumSet;
 
 //? if >=26.1 {
 //? } else if >=1.21.6 {
@@ -18,6 +23,8 @@ import net.mondless.furever.config.FureverConfig;
 *///? }
 
 public final class FureverRenderer {
+    private static final Logger LOGGER = LoggerFactory.getLogger("furever");
+    private static final EnumSet<MobChoice> failedModels = EnumSet.noneOf(MobChoice.class);
     //? if >=26.1 {
     /*private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath("furever", "textures/gui/running_fox.png");
     *///? } else {
@@ -49,6 +56,14 @@ public final class FureverRenderer {
         int screenHeight = context.getScaledWindowHeight();
         //? }
         if (screenWidth <= 0 || screenHeight <= 0) return;
+        if (config.mob != MobChoice.SPRITE_FOX && !failedModels.contains(config.mob)) {
+            try {
+                if (VanillaMobRenderer.render(context, config.mob, screenWidth, screenHeight, config)) return;
+            } catch (RuntimeException exception) {
+                failedModels.add(config.mob);
+                LOGGER.error("Vanilla {} model could not be rendered; falling back to the original fox sprite", config.mob, exception);
+            }
+        }
 
         float targetWidth = screenWidth * 0.30F * config.scale;
         float scale = Math.min(targetWidth / FRAME_WIDTH,
