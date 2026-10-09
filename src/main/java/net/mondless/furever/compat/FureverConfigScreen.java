@@ -38,11 +38,13 @@ final class FureverConfigScreen {
         category.addEntry(entries.startBooleanToggle(translatable("text.furever.enabled"), config.enabled)
                 .setDefaultValue(true).setSaveConsumer(value -> config.enabled = value).build());
         category.addEntry(entries.startEnumSelector(translatable("text.furever.screen_mode"), ScreenMode.class, config.screenMode)
-                .setDefaultValue(ScreenMode.DEFAULT).setSaveConsumer(value -> config.screenMode = value).build());
+                .setDefaultValue(ScreenMode.DEFAULT).setTooltip(translatable("text.furever.screen_mode.tooltip"))
+                .setSaveConsumer(value -> config.screenMode = value).build());
         category.addEntry(entries.startEnumSelector(translatable("text.furever.mob"), MobChoice.class, config.mob)
                 .setDefaultValue(MobChoice.SPRITE_FOX)
                 .setEnumNameProvider(value -> translatable("text.furever.mob." + value.name().toLowerCase(Locale.ROOT)))
                 .setSaveConsumer(value -> config.mob = value).build());
+
         for (Map.Entry<String, String> option : ScreenCatalog.choices().entrySet()) {
             String className = option.getKey();
             customCategory.addEntry(entries.startBooleanToggle(literal(option.getValue()), config.selectedScreens.contains(className))
@@ -56,15 +58,24 @@ final class FureverConfigScreen {
                 .setDefaultValue("").setTooltip(translatable("text.furever.custom_screens.tooltip"))
                 .setSaveConsumer(value -> config.customScreens = value).build());
         category.addEntry(entries.startIntSlider(translatable("text.furever.x"), config.xPercent, -100, 200)
-                .setDefaultValue(91).setSaveConsumer(value -> config.xPercent = value).build());
+                .setDefaultValue(91).setTooltip(translatable("text.furever.position.tooltip"))
+                .setSaveConsumer(value -> config.xPercent = value).build());
         category.addEntry(entries.startIntSlider(translatable("text.furever.y"), config.yPercent, -100, 200)
-                .setDefaultValue(82).setSaveConsumer(value -> config.yPercent = value).build());
+                .setDefaultValue(82).setTooltip(translatable("text.furever.position.tooltip"))
+                .setSaveConsumer(value -> config.yPercent = value).build());
         category.addEntry(entries.startIntSlider(translatable("text.furever.scale"), Math.round(config.scale * 100), 25, 400)
                 .setDefaultValue(100).setTextGetter(FureverConfigScreen::multiplierLabel)
                 .setSaveConsumer(value -> config.scale = value / 100.0F).build());
         category.addEntry(entries.startIntSlider(translatable("text.furever.speed"), Math.round(config.speed * 100), 10, 500)
                 .setDefaultValue(100).setTextGetter(FureverConfigScreen::multiplierLabel)
                 .setSaveConsumer(value -> config.speed = value / 100.0F).build());
+        category.addEntry(entries.startIntSlider(translatable("text.furever.orbit_radius"), Math.round(config.orbitRadius * 100), 5, 150)
+                .setDefaultValue(45).setTextGetter(FureverConfigScreen::percentLabel)
+                .setTooltip(translatable("text.furever.orbit_radius.tooltip"))
+                .setSaveConsumer(value -> config.orbitRadius = value / 100.0F).build());
+        category.addEntry(entries.startBooleanToggle(translatable("text.furever.clockwise"), config.clockwise)
+                .setDefaultValue(false).setTooltip(translatable("text.furever.clockwise.tooltip"))
+                .setSaveConsumer(value -> config.clockwise = value).build());
         category.addEntry(entries.startIntSlider(translatable("text.furever.camera_angle"), config.cameraAngle, -75, 75)
                 .setDefaultValue(30).setTextGetter(FureverConfigScreen::angleLabel)
                 .setTooltip(translatable("text.furever.camera_angle.tooltip"))
@@ -101,11 +112,13 @@ final class FureverConfigScreen {
     /*private static Component translatable(String key) { return Component.translatable(key); }
     private static Component literal(String value) { return Component.literal(value); }
     private static Component multiplierLabel(int value) { return Component.literal(String.format(Locale.ROOT, "%.2fx", value / 100.0)); }
+    private static Component percentLabel(int value) { return Component.literal(value + "%"); }
     private static Component angleLabel(int value) { return Component.literal(value + "°"); }
     *///? } else {
     private static Text translatable(String key) { return Text.translatable(key); }
     private static Text literal(String value) { return Text.literal(value); }
     private static Text multiplierLabel(int value) { return Text.literal(String.format(Locale.ROOT, "%.2fx", value / 100.0)); }
+    private static Text percentLabel(int value) { return Text.literal(value + "%"); }
     private static Text angleLabel(int value) { return Text.literal(value + "°"); }
     //? }
 }

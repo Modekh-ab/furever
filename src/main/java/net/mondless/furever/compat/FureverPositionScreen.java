@@ -67,6 +67,7 @@ public final class FureverPositionScreen extends Screen {
     public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         super.extractRenderState(context, mouseX, mouseY, delta);
         FureverRenderer.render(context);
+        drawPositionMarker(context);
         context.centeredText(font, Component.translatable("text.furever.position_hint"), width / 2, 12, 0xFFFFFF);
         context.centeredText(font, Component.translatable("text.furever.position_arrows"), width / 2, height - 42, 0xFFFFFF);
     }
@@ -75,10 +76,25 @@ public final class FureverPositionScreen extends Screen {
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         super.render(context, mouseX, mouseY, delta);
         FureverRenderer.render(context);
+        drawPositionMarker(context);
         context.drawCenteredTextWithShadow(textRenderer, Text.translatable("text.furever.position_hint"), width / 2, 12, 0xFFFFFF);
         context.drawCenteredTextWithShadow(textRenderer, Text.translatable("text.furever.position_arrows"), width / 2, height - 42, 0xFFFFFF);
     }
     //? }
+
+    //? if >=26.1 {
+    /*private void drawPositionMarker(GuiGraphicsExtractor context) {
+    *///? } else {
+    private void drawPositionMarker(DrawContext context) {
+    //? }
+        FureverConfig config = FureverConfig.get();
+        int x = Math.round(width * config.xPercent / 100.0F);
+        int y = Math.round(height * config.yPercent / 100.0F);
+        context.fill(x - 6, y - 1, x + 7, y + 2, 0xFF202020);
+        context.fill(x - 1, y - 6, x + 2, y + 7, 0xFF202020);
+        context.fill(x - 5, y, x + 6, y + 1, 0xFFFFD44D);
+        context.fill(x, y - 5, x + 1, y + 6, 0xFFFFD44D);
+    }
 
     //? if >=26.1 {
     /*@Override

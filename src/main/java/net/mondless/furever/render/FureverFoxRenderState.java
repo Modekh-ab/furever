@@ -6,6 +6,7 @@ package net.mondless.furever.render;
 public final class FureverFoxRenderState extends FoxRenderState {
     public float turnBend;
     public float stridePhase;
+    public float gallopTime;
 }
 *///? } else if >=1.21.6 {
 /*import net.minecraft.client.render.entity.state.FoxEntityRenderState;
@@ -13,5 +14,6 @@ public final class FureverFoxRenderState extends FoxRenderState {
 public final class FureverFoxRenderState extends FoxEntityRenderState {
     public float turnBend;
     public float stridePhase;
+    public float gallopTime;
 }
 *///? }

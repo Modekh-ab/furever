@@ -39,7 +39,10 @@ public final class FureverConfig {
     public float scale = 1.0F;
 
     public float speed = 1.0F;
-    /** Positive values show vanilla models from above; negative values show them from below. */
+
+    public float orbitRadius = 0.45F;
+    public boolean clockwise = false;
+
     public int cameraAngle = 30;
 
     public static FureverConfig get() {
@@ -105,6 +108,7 @@ public final class FureverConfig {
         yPercent = Math.clamp(yPercent, -100, 200);
         scale = Math.clamp(scale, 0.25F, 4.0F);
         speed = Math.clamp(speed, 0.1F, 5.0F);
+        orbitRadius = Math.clamp(orbitRadius, 0.05F, 1.5F);
         cameraAngle = Math.clamp(cameraAngle, -75, 75);
         if (customScreens == null) customScreens = "";
         if (selectedScreens == null) selectedScreens = new LinkedHashSet<>();
