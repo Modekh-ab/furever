@@ -8,6 +8,7 @@
   "text.furever.screen_mode.custom": "Selected screen classes",
   "text.furever.screen_mode.tooltip": "For CUSTOM, choose screens in the Custom screens tab.",
   "text.furever.mob": "Mob",
+  "text.furever.texture_variant": "Texture",
   "text.furever.mob.sprite_fox": "NeoForge Fox",
   "text.furever.mob.vanilla_fox": "Fox",
   "text.furever.mob.bee": "Bee",

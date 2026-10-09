@@ -18,12 +18,13 @@ import net.minecraft.text.Text;
 //? }
 import net.mondless.furever.config.FureverConfig;
 import net.mondless.furever.config.MobChoice;
+import net.mondless.furever.config.MobTextureVariant;
 import net.mondless.furever.config.ScreenCatalog;
 import net.mondless.furever.config.ScreenMode;
 
 import java.util.Locale;
+import java.util.List;
 import java.util.Map;
-import java.util.Arrays;
 
 final class FureverConfigScreen {
     private FureverConfigScreen() { }
@@ -39,19 +40,35 @@ final class FureverConfigScreen {
         ConfigCategory customCategory = builder.getOrCreateCategory(literal("Custom screens"));
         ConfigEntryBuilder entries = builder.entryBuilder();
 
-        MobChoice initialMob = config.mob;
         DropdownBoxEntry<MobChoice> mobEntry = entries.startDropdownMenu(translatable("text.furever.mob"), config.mob,
                         value -> parseMob(value, config.mob),
-                        value -> translatable("text.furever.mob." + value.name().toLowerCase(Locale.ROOT)))
-                .setSelections(Arrays.asList(MobChoice.values()))
+                        value -> translatable(value.displayNameKey()))
+                .setSelections(MobChoice.available())
                 .setDefaultValue(MobChoice.SPRITE_FOX)
                 .setSaveConsumer(value -> {
-                    if (config.mob != value) config.baby = false;
+                    if (config.mob != value) config.textureVariant = "";
                     config.mob = value;
+                    config.baby &= value.supportsBaby();
                 }).build();
         mobCategory.addEntry(mobEntry);
+        for (MobChoice choice : MobChoice.values()) {
+            List<MobTextureVariant> variants = MobTextureVariant.available(choice);
+            if (variants.size() < 2) continue;
+            MobTextureVariant initial = choice == config.mob
+                    ? MobTextureVariant.selected(choice, config.textureVariant) : variants.get(0);
+            mobCategory.addEntry(entries.startDropdownMenu(translatable("text.furever.texture_variant"), initial,
+                            input -> parseVariant(input, variants, initial),
+                            value -> literal(value.label()))
+                    .setSelections(variants)
+                    .setDefaultValue(variants.get(0))
+                    .setSaveConsumer(value -> {
+                        if (mobEntry.getValue() == choice) config.textureVariant = value.id();
+                    })
+                    .setDisplayRequirement(() -> mobEntry.getValue() == choice)
+                    .build());
+        }
         mobCategory.addEntry(entries.startBooleanToggle(translatable("text.furever.baby"), config.baby)
-                .setDefaultValue(false).setSaveConsumer(value -> config.baby = mobEntry.getValue() == initialMob && value)
+                .setDefaultValue(false).setSaveConsumer(value -> config.baby = value && mobEntry.getValue().supportsBaby())
                 .setDisplayRequirement(() -> mobEntry.getValue().supportsBaby()).build());
         Requirement vanillaModel = () -> mobEntry.getValue() != MobChoice.SPRITE_FOX;
 
@@ -129,10 +146,19 @@ final class FureverConfigScreen {
 
     private static MobChoice parseMob(String input, MobChoice fallback) {
         String key = input.trim().toUpperCase(Locale.ROOT).replace(' ', '_');
-        if (key.equals("FOX")) return MobChoice.VANILLA_FOX;
+        if (key.equals("FOX")) return MobChoice.FOX;
         if (key.equals("NEOFORGE_FOX")) return MobChoice.SPRITE_FOX;
         try { return MobChoice.valueOf(key); }
         catch (IllegalArgumentException ignored) { return fallback; }
+    }
+
+    private static MobTextureVariant parseVariant(String input, List<MobTextureVariant> variants,
+                                                  MobTextureVariant fallback) {
+        for (MobTextureVariant variant : variants) {
+            if (variant.id().equalsIgnoreCase(input.trim().replace(' ', '_'))
+                    || variant.label().equalsIgnoreCase(input.trim())) return variant;
+        }
+        return fallback;
     }
 
     //? if >=26.1 {

@@ -2,8 +2,11 @@ package net.mondless.furever.render;
 
 import net.mondless.furever.config.FureverConfig;
 import net.mondless.furever.config.MobChoice;
-import org.joml.Quaternionf;
+import net.mondless.furever.config.MobTextureVariant;
+//? if >=1.21.6 {
+/*import org.joml.Quaternionf;
 import org.joml.Vector3f;
+*///? }
 
 //? if >=26.2 {
 /*import net.minecraft.world.entity.EntityTypes;
@@ -31,6 +34,11 @@ import net.minecraft.client.renderer.entity.state.FelineRenderState;
 import net.minecraft.client.renderer.entity.state.TurtleRenderState;
 import net.minecraft.client.renderer.entity.state.PolarBearRenderState;
 import net.minecraft.client.renderer.entity.state.HoglinRenderState;
+import net.minecraft.client.renderer.entity.state.EnderDragonRenderState;
+import net.minecraft.client.renderer.entity.state.ParrotRenderState;
+import net.minecraft.client.renderer.entity.state.PhantomRenderState;
+import net.minecraft.client.renderer.entity.state.SquidRenderState;
+import net.minecraft.client.renderer.entity.state.DolphinRenderState;
 import net.minecraft.world.entity.monster.piglin.PiglinArmPose;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Pose;
@@ -38,6 +46,7 @@ import net.minecraft.world.entity.animal.fox.Fox;
 import net.minecraft.world.entity.animal.rabbit.Rabbit;
 import net.minecraft.world.entity.animal.panda.Panda;
 import net.minecraft.resources.Identifier;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.DyeColor;
 *///? } else if >=1.21.6 {
 /*import net.minecraft.client.gui.DrawContext;
@@ -61,6 +70,11 @@ import net.minecraft.client.render.entity.state.FelineEntityRenderState;
 import net.minecraft.client.render.entity.state.TurtleEntityRenderState;
 import net.minecraft.client.render.entity.state.PolarBearEntityRenderState;
 import net.minecraft.client.render.entity.state.HoglinEntityRenderState;
+import net.minecraft.client.render.entity.state.EnderDragonEntityRenderState;
+import net.minecraft.client.render.entity.state.ParrotEntityRenderState;
+import net.minecraft.client.render.entity.state.PhantomEntityRenderState;
+import net.minecraft.client.render.entity.state.SquidEntityRenderState;
+import net.minecraft.client.render.entity.state.DolphinEntityRenderState;
 import net.minecraft.entity.mob.PiglinActivity;
 import net.minecraft.entity.EntityPose;
 import net.minecraft.entity.EntityType;
@@ -98,6 +112,7 @@ import net.minecraft.client.render.entity.model.HoglinEntityModel;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.RotationAxis;
+import net.minecraft.util.DyeColor;
 //? }
 
 public final class VanillaMobRenderer {
@@ -106,8 +121,6 @@ public final class VanillaMobRenderer {
     private static final int SLIME_HOPS_PER_LAP = 8;
     private static final double RABBIT_HOP_SECONDS = 0.75;
     private static final int RABBIT_HOPS_PER_LAP = 10;
-    private static final double GOAT_HOP_SECONDS = 1.15;
-    private static final int GOAT_HOPS_PER_LAP = 8;
     private static final float STRIDE_RATE = 18.0F;
     private static final float DEFAULT_MODEL_SCALE = 0.55F;
 
@@ -121,33 +134,41 @@ public final class VanillaMobRenderer {
         int direction = clockwise ? 1 : -1;
         double angle;
         float jump = 0.0F;
-        if (mob == MobChoice.SLIME || mob == MobChoice.RABBIT || mob == MobChoice.GOAT) {
-            double hopSeconds = mob == MobChoice.SLIME ? SLIME_HOP_SECONDS
-                    : mob == MobChoice.RABBIT ? RABBIT_HOP_SECONDS : GOAT_HOP_SECONDS;
-            int hopsPerLap = mob == MobChoice.SLIME ? SLIME_HOPS_PER_LAP
-                    : mob == MobChoice.RABBIT ? RABBIT_HOPS_PER_LAP : GOAT_HOPS_PER_LAP;
+        if (mob.movement() == MobChoice.Movement.JUMP) {
+            double hopSeconds = mob == MobChoice.SLIME || mob == MobChoice.MAGMA_CUBE || mob == MobChoice.SULFUR_CUBE
+                    ? SLIME_HOP_SECONDS : RABBIT_HOP_SECONDS;
+            int hopsPerLap = mob == MobChoice.SLIME || mob == MobChoice.MAGMA_CUBE || mob == MobChoice.SULFUR_CUBE
+                    ? SLIME_HOPS_PER_LAP : RABBIT_HOPS_PER_LAP;
             double hop = elapsed / hopSeconds;
             double progress = Math.clamp((hop - Math.floor(hop) - 0.12) / 0.70, 0.0, 1.0);
             angle = direction * ((Math.floor(hop) + progress) % hopsPerLap)
                     * (Math.PI * 2.0 / hopsPerLap);
             jump = (float) Math.sin(progress * Math.PI) * size
-                    * (mob == MobChoice.SLIME ? 0.24F : mob == MobChoice.GOAT ? 0.20F : 0.30F);
+                    * (mob == MobChoice.SLIME ? 0.24F : 0.30F);
         } else {
             angle = direction * (elapsed % LOOP_SECONDS) * (Math.PI * 2.0 / LOOP_SECONDS);
         }
         float radius = size * radiusScale;
-        int x = Math.round(centerX + (float) Math.cos(angle) * radius);
-        float hover = mob == MobChoice.BAT ? size * (0.10F + (float) Math.sin(elapsed * 8.0) * 0.05F)
-                : mob == MobChoice.COD || mob == MobChoice.TURTLE
-                        ? size * (float) Math.sin(elapsed * 5.0) * 0.03F : 0.0F;
-        int y = Math.round(centerY + (float) Math.sin(angle) * radius - jump - hover);
+        int x = mob.movement() == MobChoice.Movement.IDLE ? centerX
+                : Math.round(centerX + (float) Math.cos(angle) * radius);
+        float hover = switch (mob.movement()) {
+            case FLY -> size * (0.10F + (float) Math.sin(elapsed * 8.0) * 0.05F);
+            case SWIM, FLOAT -> size * (float) Math.sin(elapsed * 5.0) * 0.03F;
+            default -> 0.0F;
+        };
+
+        int y = Math.round(centerY + (mob.movement() == MobChoice.Movement.IDLE
+                ? 0.0F : (float) Math.sin(angle) * radius) - jump - hover);
 
         double pitchProjection = Math.sin(Math.toRadians(cameraAngle));
+
         if (Math.abs(pitchProjection) < 0.15) {
             pitchProjection = Math.copySign(0.15, cameraAngle < 0 ? -1.0 : 1.0);
         }
+
         float facing = (float) Math.atan2(-direction * Math.sin(angle),
                 direction * Math.cos(angle) / pitchProjection) + (float) Math.PI;
+
         return new Orbit(x, y, facing,
                 (float) (elapsed % 10000.0));
     }
@@ -210,7 +231,7 @@ public final class VanillaMobRenderer {
         int centerY = Math.round(screenHeight * config.yPercent / 100.0F);
         int box = Math.max(16, Math.round(Math.min(screenWidth * 0.30F * config.scale, screenHeight * 0.65F)));
         float modelScale = switch (mob) {
-            case VANILLA_FOX -> 0.29F;
+            case FOX -> 0.29F;
             case BEE -> 0.43F;
             case CREEPER -> 0.30F;
             case SLIME -> 0.40F;
@@ -222,6 +243,9 @@ public final class VanillaMobRenderer {
             case PANDA, SHEEP, GOAT, POLAR_BEAR, HOGLIN, ZOGLIN -> 0.29F;
             case WOLF, CAT, OCELOT -> 0.32F;
             case TURTLE -> 0.35F;
+            case ENDER_DRAGON -> 0.045F;
+            case GHAST, HAPPY_GHAST -> 0.11F;
+            case WITHER, WARDEN, RAVAGER, ELDER_GUARDIAN -> 0.18F;
             default -> 0.29F;
         };
         //? if <1.21.6 {
@@ -236,7 +260,7 @@ public final class VanillaMobRenderer {
         int turnSign = config.clockwise ? 1 : -1;
 
         //? if >=26.1 {
-        /*EntityRenderState state = createState(mob, time, turnSign, config.baby);
+        /*EntityRenderState state = createState(mob, time, turnSign, config.baby, config.textureVariant);
         if (Minecraft.getInstance().getEntityRenderDispatcher().getRenderer(state) == null) return false;
         Quaternionf rotation = new Quaternionf().rotateZ((float) Math.PI)
                 .rotateX((float) Math.toRadians(-config.cameraAngle)).rotateY(orbit.facing());
@@ -245,7 +269,7 @@ public final class VanillaMobRenderer {
                 rotation, new Quaternionf(), orbit.x() - box / 2, orbit.y() - box / 2,
                 orbit.x() + box / 2, orbit.y() + box / 2);
         *///? } else if >=1.21.6 {
-        /*EntityRenderState state = createState(mob, time, turnSign, config.baby);
+        /*EntityRenderState state = createState(mob, time, turnSign, config.baby, config.textureVariant);
         if (MinecraftClient.getInstance().getEntityRenderDispatcher().getRenderer(state) == null) return false;
         Quaternionf rotation = new Quaternionf().rotateZ((float) Math.PI)
                 .rotateX((float) Math.toRadians(-config.cameraAngle)).rotateY(orbit.facing());
@@ -254,24 +278,41 @@ public final class VanillaMobRenderer {
                 rotation, new Quaternionf(), orbit.x() - box / 2, orbit.y() - box / 2,
                 orbit.x() + box / 2, orbit.y() + box / 2);
         *///? } else {
+        if (!legacyCustomModel(mob))
+            return LegacyMobRenderer.render(context, mob, orbit.x(), orbit.y(), renderSize,
+                    orbit.facing(), config.cameraAngle, time, config.textureVariant, config.baby);
         ModelPart model = getModel(mob);
         model.traverse().forEach(ModelPart::resetTransform);
         animate(model, mob, time, turnSign);
         //? if <=1.21.1 {
         context.draw(() -> drawLegacy(context, context.getVertexConsumers(), model, mob,
-                orbit.x(), orbit.y(), renderSize, orbit.facing(), config.cameraAngle, time));
+                orbit.x(), orbit.y(), renderSize, orbit.facing(), config.cameraAngle, time,
+                config.textureVariant, config.baby));
         //? } else {
         /*context.draw(provider -> drawLegacy(context, provider, model, mob,
-                orbit.x(), orbit.y(), renderSize, orbit.facing(), config.cameraAngle, time));
+                orbit.x(), orbit.y(), renderSize, orbit.facing(), config.cameraAngle, time,
+                config.textureVariant, config.baby));
         *///? }
         //? }
         return true;
     }
 
     //? if >=26.1 {
-    /*private static EntityRenderState createState(MobChoice mob, float time, int turnSign, boolean baby) {
+    /*private static EntityRenderState createState(MobChoice mob, float time, int turnSign, boolean baby,
+                                                 String variantId) {
+        if (mob == MobChoice.ENDER_DRAGON) {
+            EnderDragonRenderState dragon = new EnderDragonRenderState();
+            dragon.entityType = getType(mob);
+            dragon.ageInTicks = time * 20.0F;
+            dragon.boundingBoxWidth = 8.0F;
+            dragon.boundingBoxHeight = 8.0F;
+            dragon.lightCoords = 0xF000F0;
+            dragon.flapTime = time * 0.7F;
+            for (int i = 0; i < 64; i++) dragon.flightHistory.record(0.0, 0.0F);
+            return dragon;
+        }
         LivingEntityRenderState state = switch (mob) {
-            case VANILLA_FOX -> {
+            case FOX -> {
                 FureverFoxRenderState fox = new FureverFoxRenderState();
                 fox.variant = Fox.Variant.RED;
                 fox.turnBend = turnSign * foxBend(time);
@@ -352,38 +393,68 @@ public final class VanillaMobRenderer {
             }
             case POLAR_BEAR -> new PolarBearRenderState();
             case HOGLIN, ZOGLIN -> new HoglinRenderState();
-            default -> throw new IllegalArgumentException("Not a model choice: " + mob);
+            case PARROT -> {
+                ParrotRenderState parrot = new ParrotRenderState();
+                parrot.flapAngle = time * 18.0F;
+                yield parrot;
+            }
+            case PHANTOM -> {
+                PhantomRenderState phantom = new PhantomRenderState();
+                phantom.flapTime = time * 18.0F;
+                yield phantom;
+            }
+            case SQUID, GLOW_SQUID -> {
+                SquidRenderState squid = new SquidRenderState();
+                squid.tentacleAngle = time * 8.0F;
+                yield squid;
+            }
+            case DOLPHIN -> {
+                DolphinRenderState dolphin = new DolphinRenderState();
+                dolphin.isMoving = true;
+                yield dolphin;
+            }
+            default -> {
+                EntityRenderState lookup = new EntityRenderState();
+                lookup.entityType = getType(mob);
+                var renderer = Minecraft.getInstance().getEntityRenderDispatcher().getRenderer(lookup);
+                yield (LivingEntityRenderState) renderer.createRenderState();
+            }
         };
         state.entityType = getType(mob);
+        if (state instanceof SlimeRenderState slimeState) {
+            slimeState.size = 2;
+            slimeState.squish = slimeSquish(time);
+        }
         state.ageInTicks = time * 20.0F;
         state.isBaby = baby && mob.supportsBaby();
+        state.isInWater = mob.movement() == MobChoice.Movement.SWIM;
         state.walkAnimationPos = time * STRIDE_RATE;
         state.walkAnimationSpeed = mob == MobChoice.SLIME ? 0.0F : 0.65F;
         state.scale = 1.0F;
         state.ageScale = 1.0F;
         state.pose = Pose.STANDING;
-        state.boundingBoxWidth = mob == MobChoice.SLIME ? 1.0F : 0.9F;
-        state.boundingBoxHeight = switch (mob) {
-            case BEE -> 0.6F;
-            case CREEPER, ZOMBIE, HUSK, DROWNED, PIGLIN, ZOMBIFIED_PIGLIN -> 1.7F;
-            case SLIME -> 1.0F;
-            case RABBIT -> 0.5F;
-            case BAT -> 0.9F;
-            case COD -> 0.3F;
-            case TURTLE -> 0.4F;
-            case CAT, OCELOT -> 0.5F;
-            case WOLF -> 0.85F;
-            case PANDA, SHEEP, GOAT -> 1.3F;
-            case POLAR_BEAR, HOGLIN, ZOGLIN -> 1.4F;
-            default -> 0.8F;
-        };
+        state.boundingBoxWidth = state.entityType.getDimensions().width();
+        state.boundingBoxHeight = state.entityType.getDimensions().height();
         state.lightCoords = 0xF000F0;
+        ModernMobStateDefaults.apply(state, mob, variantId, baby);
         return state;
     }
     *///? } else if >=1.21.6 {
-    /*private static EntityRenderState createState(MobChoice mob, float time, int turnSign, boolean baby) {
+    /*private static EntityRenderState createState(MobChoice mob, float time, int turnSign, boolean baby,
+                                                 String variantId) {
+        if (mob == MobChoice.ENDER_DRAGON) {
+            EnderDragonEntityRenderState dragon = new EnderDragonEntityRenderState();
+            dragon.entityType = EntityType.get(mob.id()).orElseThrow();
+            dragon.age = time * 20.0F;
+            dragon.width = 8.0F;
+            dragon.height = 8.0F;
+            dragon.wingPosition = time * 0.7F;
+            for (int i = 0; i < 64; i++) dragon.frameTracker.tick(0.0, 0.0F);
+            setLight(dragon);
+            return dragon;
+        }
         LivingEntityRenderState state = switch (mob) {
-            case VANILLA_FOX -> {
+            case FOX -> {
                 FureverFoxRenderState fox = new FureverFoxRenderState();
                 fox.type = FoxEntity.Variant.RED;
                 fox.turnBend = turnSign * foxBend(time);
@@ -461,10 +532,35 @@ public final class VanillaMobRenderer {
             }
             case POLAR_BEAR -> new PolarBearEntityRenderState();
             case HOGLIN, ZOGLIN -> new HoglinEntityRenderState();
-            default -> throw new IllegalArgumentException("Not a model choice: " + mob);
+            case PARROT -> {
+                ParrotEntityRenderState parrot = new ParrotEntityRenderState();
+                parrot.flapAngle = time * 18.0F;
+                yield parrot;
+            }
+            case PHANTOM -> {
+                PhantomEntityRenderState phantom = new PhantomEntityRenderState();
+                phantom.wingFlapProgress = time * 18.0F;
+                yield phantom;
+            }
+            case SQUID, GLOW_SQUID -> {
+                SquidEntityRenderState squid = new SquidEntityRenderState();
+                squid.tentacleAngle = time * 8.0F;
+                yield squid;
+            }
+            case DOLPHIN -> {
+                DolphinEntityRenderState dolphin = new DolphinEntityRenderState();
+                dolphin.moving = true;
+                yield dolphin;
+            }
+            default -> {
+                EntityRenderState lookup = new EntityRenderState();
+                lookup.entityType = EntityType.get(mob.id()).orElseThrow();
+                var renderer = MinecraftClient.getInstance().getEntityRenderDispatcher().getRenderer(lookup);
+                yield (LivingEntityRenderState) renderer.createRenderState();
+            }
         };
         state.entityType = switch (mob) {
-            case VANILLA_FOX -> EntityType.FOX;
+            case FOX -> EntityType.FOX;
             case BEE -> EntityType.BEE;
             case CREEPER -> EntityType.CREEPER;
             case SLIME -> EntityType.SLIME;
@@ -486,37 +582,30 @@ public final class VanillaMobRenderer {
             case POLAR_BEAR -> EntityType.POLAR_BEAR;
             case HOGLIN -> EntityType.HOGLIN;
             case ZOGLIN -> EntityType.ZOGLIN;
-            default -> throw new IllegalArgumentException("Not a model choice: " + mob);
+            default -> EntityType.get(mob.id()).orElseThrow();
         };
+        if (state instanceof SlimeEntityRenderState slimeState) {
+            slimeState.size = 2;
+            slimeState.stretch = slimeSquish(time);
+        }
         state.age = time * 20.0F;
         state.baby = baby && mob.supportsBaby();
+        state.touchingWater = mob.movement() == MobChoice.Movement.SWIM;
         state.limbSwingAnimationProgress = time * STRIDE_RATE;
         state.limbSwingAmplitude = mob == MobChoice.SLIME ? 0.0F : 0.65F;
         state.baseScale = 1.0F;
         state.ageScale = 1.0F;
         state.pose = EntityPose.STANDING;
-        state.width = mob == MobChoice.SLIME ? 1.0F : 0.9F;
-        state.height = switch (mob) {
-            case BEE -> 0.6F;
-            case CREEPER, ZOMBIE, HUSK, DROWNED, PIGLIN, ZOMBIFIED_PIGLIN -> 1.7F;
-            case SLIME -> 1.0F;
-            case RABBIT -> 0.5F;
-            case BAT -> 0.9F;
-            case COD -> 0.3F;
-            case TURTLE -> 0.4F;
-            case CAT, OCELOT -> 0.5F;
-            case WOLF -> 0.85F;
-            case PANDA, SHEEP, GOAT -> 1.3F;
-            case POLAR_BEAR, HOGLIN, ZOGLIN -> 1.4F;
-            default -> 0.8F;
-        };
+        state.width = state.entityType.getDimensions().width();
+        state.height = state.entityType.getDimensions().height();
         setLight(state);
+        ModernMobStateDefaults.apply(state, mob, variantId, baby);
         return state;
     }
     *///? } else {
     private static ModelPart getModel(MobChoice mob) {
         return switch (mob) {
-            case VANILLA_FOX -> {
+            case FOX -> {
                 if (foxModel == null) foxModel = FoxEntityModel.getTexturedModelData().createModel();
                 yield foxModel;
             }
@@ -600,7 +689,16 @@ public final class VanillaMobRenderer {
                 if (hoglinModel == null) hoglinModel = HoglinEntityModel.getTexturedModelData().createModel();
                 yield hoglinModel;
             }
-            default -> throw new IllegalArgumentException("Not a model choice: " + mob);
+            default -> throw new IllegalArgumentException("No legacy model: " + mob);
+        };
+    }
+
+    private static boolean legacyCustomModel(MobChoice mob) {
+        return switch (mob) {
+            case FOX, BEE, CREEPER, SLIME, RABBIT, BAT, COD, ZOMBIE, HUSK,
+                    DROWNED, PIGLIN, ZOMBIFIED_PIGLIN, PANDA, SHEEP, GOAT,
+                    WOLF, CAT, OCELOT, TURTLE, POLAR_BEAR, HOGLIN, ZOGLIN -> true;
+            default -> false;
         };
     }
 
@@ -608,7 +706,7 @@ public final class VanillaMobRenderer {
         float phase = time * STRIDE_RATE;
         float step = (float) Math.sin(phase) * 0.55F;
         switch (mob) {
-            case VANILLA_FOX -> {
+            case FOX -> {
                 root.getChild("right_hind_leg").pitch = step;
                 root.getChild("left_hind_leg").pitch = -step;
                 root.getChild("right_front_leg").pitch = -step;
@@ -656,13 +754,6 @@ public final class VanillaMobRenderer {
                 root.getChild("left_hind_leg").pitch = -step;
                 root.getChild("right_front_leg").pitch = -step;
                 root.getChild("left_front_leg").pitch = step;
-                if (mob == MobChoice.GOAT) {
-                    float leap = (float) Math.sin(Math.PI * hopProgress(time, GOAT_HOP_SECONDS));
-                    root.getChild("right_front_leg").pitch -= leap * 0.55F;
-                    root.getChild("left_front_leg").pitch -= leap * 0.55F;
-                    root.getChild("right_hind_leg").pitch += leap * 0.40F;
-                    root.getChild("left_hind_leg").pitch += leap * 0.40F;
-                }
                 if (mob == MobChoice.WOLF) root.getChild("tail").yaw = (float) Math.sin(time * 7.0F) * 0.2F;
                 if (mob == MobChoice.CAT || mob == MobChoice.OCELOT)
                     root.getChild("tail2").yaw = (float) Math.sin(time * 4.0F) * 0.15F;
@@ -695,9 +786,9 @@ public final class VanillaMobRenderer {
 
     private static void drawLegacy(DrawContext context, VertexConsumerProvider provider, ModelPart model,
                                    MobChoice mob, int centerX, int centerY, float size, float facing,
-                                   int cameraAngle, float time) {
+                                   int cameraAngle, float time, String variantId, boolean baby) {
         Identifier texture = switch (mob) {
-            case VANILLA_FOX -> FOX_TEXTURE;
+            case FOX -> FOX_TEXTURE;
             case BEE -> BEE_TEXTURE;
             case CREEPER -> CREEPER_TEXTURE;
             case SLIME -> SLIME_TEXTURE;
@@ -719,8 +810,11 @@ public final class VanillaMobRenderer {
             case POLAR_BEAR -> POLAR_BEAR_TEXTURE;
             case HOGLIN -> HOGLIN_TEXTURE;
             case ZOGLIN -> ZOGLIN_TEXTURE;
-            default -> throw new IllegalArgumentException("Not a model choice: " + mob);
+            default -> throw new IllegalArgumentException("No legacy texture: " + mob);
         };
+        MobTextureVariant variant = MobTextureVariant.selected(mob, variantId);
+        if (mob != MobChoice.SHEEP && variant != null && variant.texturePath(baby) != null)
+            texture = Identifier.of("minecraft", variant.texturePath(baby));
         MatrixStack matrices = context.getMatrices();
         matrices.push();
         matrices.translate(centerX, centerY + size * 0.5F + (mob == MobChoice.BEE ? Math.sin(time * 5.0F) * 5.0F : 0.0F), 200.0F);
@@ -740,8 +834,10 @@ public final class VanillaMobRenderer {
             if (sheepWoolModel == null) sheepWoolModel = SheepWoolEntityModel.getTexturedModelData().createModel();
             sheepWoolModel.traverse().forEach(ModelPart::resetTransform);
             animate(sheepWoolModel, mob, time, 1);
+            DyeColor woolColor = variant == null ? DyeColor.WHITE
+                    : DyeColor.valueOf(variant.id().toUpperCase(java.util.Locale.ROOT));
             sheepWoolModel.render(matrices, provider.getBuffer(RenderLayer.getEntityCutoutNoCull(SHEEP_WOOL_TEXTURE)),
-                    0xF000F0, 0);
+                    0xF000F0, 0, 0xFF000000 | woolColor.getEntityColor());
         }
         matrices.pop();
     }
@@ -775,7 +871,7 @@ public final class VanillaMobRenderer {
     //? if >=26.2 {
     /*private static EntityType<?> getType(MobChoice mob) {
         return switch (mob) {
-            case VANILLA_FOX -> EntityTypes.FOX;
+            case FOX -> EntityTypes.FOX;
             case BEE -> EntityTypes.BEE;
             case CREEPER -> EntityTypes.CREEPER;
             case SLIME -> EntityTypes.SLIME;
@@ -797,13 +893,14 @@ public final class VanillaMobRenderer {
             case POLAR_BEAR -> EntityTypes.POLAR_BEAR;
             case HOGLIN -> EntityTypes.HOGLIN;
             case ZOGLIN -> EntityTypes.ZOGLIN;
-            default -> throw new IllegalArgumentException("Not a model choice: " + mob);
+            default -> BuiltInRegistries.ENTITY_TYPE.getOptional(
+                    Identifier.fromNamespaceAndPath("minecraft", mob.id())).orElseThrow();
         };
     }
     *///? } else if >=26.1 {
     /*private static EntityType<?> getType(MobChoice mob) {
         return switch (mob) {
-            case VANILLA_FOX -> EntityType.FOX;
+            case FOX -> EntityType.FOX;
             case BEE -> EntityType.BEE;
             case CREEPER -> EntityType.CREEPER;
             case SLIME -> EntityType.SLIME;
@@ -825,7 +922,8 @@ public final class VanillaMobRenderer {
             case POLAR_BEAR -> EntityType.POLAR_BEAR;
             case HOGLIN -> EntityType.HOGLIN;
             case ZOGLIN -> EntityType.ZOGLIN;
-            default -> throw new IllegalArgumentException("Not a model choice: " + mob);
+            default -> BuiltInRegistries.ENTITY_TYPE.getOptional(
+                    Identifier.fromNamespaceAndPath("minecraft", mob.id())).orElseThrow();
         };
     }
     *///? }
