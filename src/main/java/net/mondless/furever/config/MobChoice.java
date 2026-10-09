@@ -8,5 +8,28 @@ public enum MobChoice {
     SLIME,
     RABBIT,
     BAT,
-    COD
+    COD,
+    ZOMBIE,
+    HUSK,
+    DROWNED,
+    PIGLIN,
+    ZOMBIFIED_PIGLIN,
+    PANDA,
+    SHEEP,
+    GOAT,
+    WOLF,
+    CAT,
+    OCELOT,
+    TURTLE,
+    POLAR_BEAR,
+    HOGLIN,
+    ZOGLIN;
+
+    public boolean supportsBaby() {
+        return switch (this) {
+            case VANILLA_FOX, RABBIT, ZOMBIE, HUSK, DROWNED, PIGLIN, ZOMBIFIED_PIGLIN,
+                    PANDA, SHEEP, GOAT, WOLF, CAT, OCELOT, TURTLE, POLAR_BEAR, HOGLIN, ZOGLIN -> true;
+            default -> false;
+        };
+    }
 }

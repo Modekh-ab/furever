@@ -29,6 +29,7 @@ public final class FureverConfig {
     public boolean enabled = true;
     public ScreenMode screenMode = ScreenMode.DEFAULT;
     public MobChoice mob = MobChoice.SPRITE_FOX;
+    public boolean baby = false;
 
     public String customScreens = "";
 
@@ -104,6 +105,7 @@ public final class FureverConfig {
     public void sanitize() {
         if (screenMode == null) screenMode = ScreenMode.DEFAULT;
         if (mob == null) mob = MobChoice.SPRITE_FOX;
+        if (!mob.supportsBaby()) baby = false;
         xPercent = Math.clamp(xPercent, -100, 200);
         yPercent = Math.clamp(yPercent, -100, 200);
         scale = Math.clamp(scale, 0.25F, 4.0F);

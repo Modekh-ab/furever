@@ -3,7 +3,9 @@ package net.mondless.furever.compat;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
 import me.shedaniel.clothconfig2.api.ConfigCategory;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
+import me.shedaniel.clothconfig2.api.Requirement;
 import me.shedaniel.clothconfig2.gui.ClothConfigScreen;
+import me.shedaniel.clothconfig2.gui.entries.DropdownBoxEntry;
 import net.fabricmc.fabric.api.client.screen.v1.Screens;
 //? if >=26.1 {
 /*import net.minecraft.client.gui.components.Button;
@@ -21,6 +23,7 @@ import net.mondless.furever.config.ScreenMode;
 
 import java.util.Locale;
 import java.util.Map;
+import java.util.Arrays;
 
 final class FureverConfigScreen {
     private FureverConfigScreen() { }
@@ -32,18 +35,31 @@ final class FureverConfigScreen {
                 .setTitle(translatable("text.furever.title"))
                 .setAfterInitConsumer(screen -> addPositionButton(screen, parent));
         ConfigCategory category = builder.getOrCreateCategory(literal("General"));
+        ConfigCategory mobCategory = builder.getOrCreateCategory(literal("Mobs"));
         ConfigCategory customCategory = builder.getOrCreateCategory(literal("Custom screens"));
         ConfigEntryBuilder entries = builder.entryBuilder();
+
+        MobChoice initialMob = config.mob;
+        DropdownBoxEntry<MobChoice> mobEntry = entries.startDropdownMenu(translatable("text.furever.mob"), config.mob,
+                        value -> parseMob(value, config.mob),
+                        value -> translatable("text.furever.mob." + value.name().toLowerCase(Locale.ROOT)))
+                .setSelections(Arrays.asList(MobChoice.values()))
+                .setDefaultValue(MobChoice.SPRITE_FOX)
+                .setSaveConsumer(value -> {
+                    if (config.mob != value) config.baby = false;
+                    config.mob = value;
+                }).build();
+        mobCategory.addEntry(mobEntry);
+        mobCategory.addEntry(entries.startBooleanToggle(translatable("text.furever.baby"), config.baby)
+                .setDefaultValue(false).setSaveConsumer(value -> config.baby = mobEntry.getValue() == initialMob && value)
+                .setDisplayRequirement(() -> mobEntry.getValue().supportsBaby()).build());
+        Requirement vanillaModel = () -> mobEntry.getValue() != MobChoice.SPRITE_FOX;
 
         category.addEntry(entries.startBooleanToggle(translatable("text.furever.enabled"), config.enabled)
                 .setDefaultValue(true).setSaveConsumer(value -> config.enabled = value).build());
         category.addEntry(entries.startEnumSelector(translatable("text.furever.screen_mode"), ScreenMode.class, config.screenMode)
                 .setDefaultValue(ScreenMode.DEFAULT).setTooltip(translatable("text.furever.screen_mode.tooltip"))
                 .setSaveConsumer(value -> config.screenMode = value).build());
-        category.addEntry(entries.startEnumSelector(translatable("text.furever.mob"), MobChoice.class, config.mob)
-                .setDefaultValue(MobChoice.SPRITE_FOX)
-                .setEnumNameProvider(value -> translatable("text.furever.mob." + value.name().toLowerCase(Locale.ROOT)))
-                .setSaveConsumer(value -> config.mob = value).build());
 
         for (Map.Entry<String, String> option : ScreenCatalog.choices().entrySet()) {
             String className = option.getKey();
@@ -72,14 +88,17 @@ final class FureverConfigScreen {
         category.addEntry(entries.startIntSlider(translatable("text.furever.orbit_radius"), Math.round(config.orbitRadius * 100), 5, 150)
                 .setDefaultValue(45).setTextGetter(FureverConfigScreen::percentLabel)
                 .setTooltip(translatable("text.furever.orbit_radius.tooltip"))
-                .setSaveConsumer(value -> config.orbitRadius = value / 100.0F).build());
+                .setSaveConsumer(value -> config.orbitRadius = value / 100.0F)
+                .setDisplayRequirement(vanillaModel).build());
         category.addEntry(entries.startBooleanToggle(translatable("text.furever.clockwise"), config.clockwise)
                 .setDefaultValue(false).setTooltip(translatable("text.furever.clockwise.tooltip"))
-                .setSaveConsumer(value -> config.clockwise = value).build());
+                .setSaveConsumer(value -> config.clockwise = value)
+                .setDisplayRequirement(vanillaModel).build());
         category.addEntry(entries.startIntSlider(translatable("text.furever.camera_angle"), config.cameraAngle, -75, 75)
                 .setDefaultValue(30).setTextGetter(FureverConfigScreen::angleLabel)
                 .setTooltip(translatable("text.furever.camera_angle.tooltip"))
-                .setSaveConsumer(value -> config.cameraAngle = value).build());
+                .setSaveConsumer(value -> config.cameraAngle = value)
+                .setDisplayRequirement(vanillaModel).build());
 
         builder.setSavingRunnable(FureverConfig::save);
         return builder.build();
@@ -106,6 +125,14 @@ final class FureverConfigScreen {
         Screens.getButtons(settings).add(ButtonWidget.builder(translatable("text.furever.place"),
                 button -> openPositionScreen(settings, parent)).dimensions(x, y, 86, 20).build());
         //? }
+    }
+
+    private static MobChoice parseMob(String input, MobChoice fallback) {
+        String key = input.trim().toUpperCase(Locale.ROOT).replace(' ', '_');
+        if (key.equals("FOX")) return MobChoice.VANILLA_FOX;
+        if (key.equals("NEOFORGE_FOX")) return MobChoice.SPRITE_FOX;
+        try { return MobChoice.valueOf(key); }
+        catch (IllegalArgumentException ignored) { return fallback; }
     }
 
     //? if >=26.1 {
