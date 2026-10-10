@@ -1,26 +1,25 @@
 //? if >=1.21.6 {
 package net.mondless.furever.render;
 
-import net.mondless.furever.config.MobChoice;
-import net.mondless.furever.config.MobTextureVariant;
-
 //? if >=26.1 {
 /*import net.minecraft.resources.Identifier;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.npc.villager.VillagerData;
 *///? } else {
-import net.minecraft.util.Identifier;
 import net.minecraft.registry.Registries;
+import net.minecraft.util.Identifier;
 import net.minecraft.village.VillagerData;
 //? }
+import net.mondless.furever.config.MobChoice;
+import net.mondless.furever.config.MobTextureVariant;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
-/** Values normally copied from a world entity, which is unavailable on the title screen. */
 final class ModernMobStateDefaults {
-    private ModernMobStateDefaults() { }
+    private ModernMobStateDefaults() {
+    }
 
     static void apply(Object state, MobChoice mob, String variantId, boolean baby) {
         MobTextureVariant selected = MobTextureVariant.selected(mob, variantId);
@@ -31,7 +30,10 @@ final class ModernMobStateDefaults {
                 if (selected != null && field.getType() == Identifier.class
                         && (mob == MobChoice.CAT || mob == MobChoice.WOLF || mob == MobChoice.FROG)) {
                     String path = selected.texturePath(baby);
-                    if (path != null) { field.set(state, id(path)); continue; }
+                    if (path != null) {
+                        field.set(state, id(path));
+                        continue;
+                    }
                 }
                 if (selected != null && field.getType().isEnum()
                         && mob != MobChoice.CAT && mob != MobChoice.WOLF
@@ -61,7 +63,6 @@ final class ModernMobStateDefaults {
                     if (variant != null) field.set(state, variant);
                 }
             } catch (ReflectiveOperationException | RuntimeException ignored) {
-                // A variant that cannot be built is skipped by its vanilla renderer.
             }
         }
     }
@@ -77,13 +78,19 @@ final class ModernMobStateDefaults {
         } : selected.assetId(false);
         Class<?> modelType = null;
         for (Class<?> nested : variantType.getDeclaredClasses()) {
-            if (nested.isEnum()) { modelType = nested; break; }
+            if (nested.isEnum()) {
+                modelType = nested;
+                break;
+            }
         }
         if (modelType == null) return null;
         Object model = modelType.getEnumConstants()[0];
         if (selected != null) {
             for (Object value : modelType.getEnumConstants()) {
-                if (((Enum<?>) value).name().equalsIgnoreCase(selected.id())) { model = value; break; }
+                if (((Enum<?>) value).name().equalsIgnoreCase(selected.id())) {
+                    model = value;
+                    break;
+                }
             }
         }
 

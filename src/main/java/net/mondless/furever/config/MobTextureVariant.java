@@ -20,6 +20,11 @@ public record MobTextureVariant(MobChoice mob, String id, String label, List<Str
     private static final Map<MobChoice, List<MobTextureVariant>> AVAILABLE = new EnumMap<>(MobChoice.class);
     private static Object cachedResources;
 
+    @Override
+    public String toString() {
+        return label;
+    }
+
     private static Map<MobChoice, List<MobTextureVariant>> createChoices() {
         Map<MobChoice, List<MobTextureVariant>> result = new EnumMap<>(MobChoice.class);
         add(result, MobChoice.CAT, "tabby,black,red,siamese,british_shorthair,calico,persian,ragdoll,white,jellie,all_black");

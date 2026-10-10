@@ -25,6 +25,7 @@ public final class FureverConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Path PATH = FabricLoader.getInstance().getConfigDir().resolve("furever.json");
     private static FureverConfig INSTANCE = new FureverConfig();
+    private static boolean loaded;
 
     public boolean enabled = true;
     public ScreenMode screenMode = ScreenMode.DEFAULT;
@@ -48,11 +49,14 @@ public final class FureverConfig {
     public int cameraAngle = 30;
 
     public static FureverConfig get() {
+        if (!loaded) load();
         return INSTANCE;
     }
 
     public static void load() {
+        if (loaded) return;
         if (!Files.exists(PATH)) {
+            loaded = true;
             save();
             return;
         }
@@ -62,6 +66,7 @@ public final class FureverConfig {
         } catch (Exception ignored) {
         }
         INSTANCE.sanitize();
+        loaded = true;
     }
 
     public static void save() {

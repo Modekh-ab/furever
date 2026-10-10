@@ -4,11 +4,13 @@ package net.mondless.furever.render;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.model.ModelPart;
+import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.entity.EntityRenderDispatcher;
 import net.minecraft.client.render.entity.EntityRenderer;
 import net.minecraft.client.render.entity.model.EntityModel;
+import net.minecraft.client.render.entity.model.IllagerEntityModel;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.EntityType;
 import net.minecraft.util.Identifier;
@@ -19,18 +21,13 @@ import net.mondless.furever.config.MobTextureVariant;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.EnumMap;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 final class LegacyMobRenderer {
     private static final Map<MobChoice, Identifier> TEXTURES = new EnumMap<>(MobChoice.class);
 
-    private LegacyMobRenderer() { }
+    private LegacyMobRenderer() {
+    }
 
     static boolean render(DrawContext context, MobChoice mob, int x, int y, float size,
                           float facing, int cameraAngle, float time, String variantId, boolean baby) {
@@ -63,7 +60,8 @@ final class LegacyMobRenderer {
                 field.setAccessible(true);
                 if (field.get(dispatcher) instanceof Map<?, ?> map && map.get(type) instanceof EntityRenderer result)
                     return result;
-            } catch (ReflectiveOperationException | RuntimeException ignored) { }
+            } catch (ReflectiveOperationException | RuntimeException ignored) {
+            }
         }
         return null;
     }
@@ -75,7 +73,8 @@ final class LegacyMobRenderer {
                 try {
                     field.setAccessible(true);
                     if (field.get(renderer) instanceof EntityModel<?> model) return model;
-                } catch (ReflectiveOperationException | RuntimeException ignored) { }
+                } catch (ReflectiveOperationException | RuntimeException ignored) {
+                }
             }
         }
         return null;
@@ -116,9 +115,10 @@ final class LegacyMobRenderer {
         for (Method method : renderer.getClass().getMethods()) {
             if (method.getParameterCount() != 1 || method.getReturnType() != Identifier.class) continue;
             try {
-                if (method.invoke(renderer, new Object[] {null}) instanceof Identifier found && exists(found))
+                if (method.invoke(renderer, new Object[]{null}) instanceof Identifier found && exists(found))
                     return found;
-            } catch (ReflectiveOperationException | RuntimeException ignored) { }
+            } catch (ReflectiveOperationException | RuntimeException ignored) {
+            }
         }
         for (Class<?> owner = renderer.getClass(); owner != null; owner = owner.getSuperclass()) {
             for (Field field : owner.getDeclaredFields()) {
@@ -126,7 +126,8 @@ final class LegacyMobRenderer {
                 try {
                     field.setAccessible(true);
                     if (field.get(null) instanceof Identifier found && exists(found)) return found;
-                } catch (ReflectiveOperationException | RuntimeException ignored) { }
+                } catch (ReflectiveOperationException | RuntimeException ignored) {
+                }
             }
         }
         List<String> paths = new ArrayList<>();
@@ -166,10 +167,22 @@ final class LegacyMobRenderer {
                 try {
                     field.setAccessible(true);
                     if (field.get(model) instanceof ModelPart part && seen.add(part)) parts.add(part);
-                } catch (ReflectiveOperationException | RuntimeException ignored) { }
+                } catch (ReflectiveOperationException | RuntimeException ignored) {
+                }
             }
         }
         for (ModelPart part : parts) part.traverse().forEach(ModelPart::resetTransform);
+        if (model instanceof IllagerEntityModel<?> illager) {
+            //? if <=1.21.1 {
+            illager.getPart().getChild("arms").visible = false;
+            illager.getPart().getChild("left_arm").visible = true;
+            illager.getPart().getChild("right_arm").visible = true;
+            //? } else {
+            /*illager.getPart("arms").ifPresent(arms -> arms.visible = false);
+            illager.getPart("left_arm").ifPresent(arm -> arm.visible = true);
+            illager.getPart("right_arm").ifPresent(arm -> arm.visible = true);
+            *///? }
+        }
         for (ModelPart part : parts) animateChildren(part, mob, time, seen);
     }
 
@@ -180,12 +193,14 @@ final class LegacyMobRenderer {
                 field.setAccessible(true);
                 if (!(field.get(part) instanceof Map<?, ?> map)) continue;
                 for (Map.Entry<?, ?> entry : map.entrySet()) {
-                    if (!(entry.getKey() instanceof String name) || !(entry.getValue() instanceof ModelPart child)) continue;
+                    if (!(entry.getKey() instanceof String name) || !(entry.getValue() instanceof ModelPart child))
+                        continue;
                     movePart(child, name, mob, time);
                     if (seen.add(child)) animateChildren(child, mob, time, seen);
                 }
                 return;
-            } catch (ReflectiveOperationException | RuntimeException ignored) { }
+            } catch (ReflectiveOperationException | RuntimeException ignored) {
+            }
         }
     }
 
@@ -212,7 +227,8 @@ final class LegacyMobRenderer {
             case JUMP -> {
                 if (key.contains("leg")) part.pitch += (float) Math.sin(time * 9.0F) * 0.6F;
             }
-            case FLOAT, IDLE -> { }
+            case FLOAT, IDLE -> {
+            }
         }
     }
 
@@ -221,18 +237,19 @@ final class LegacyMobRenderer {
                              float facing, int cameraAngle) {
         MatrixStack matrices = context.getMatrices();
         matrices.push();
-        matrices.translate(x, y + size * 0.5F, 200.0F);
-        matrices.scale(size, -size, size);
+        matrices.translate(x, y - size * 0.5F, 200.0F);
+        matrices.scale(size, size, size);
         matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(-cameraAngle));
-        matrices.multiply(RotationAxis.POSITIVE_Y.rotation(-facing));
+        matrices.multiply(RotationAxis.POSITIVE_Y.rotation(facing));
         var vertices = provider.getBuffer(RenderLayer.getEntityCutoutNoCull(texture));
         if (mob == MobChoice.ENDER_DRAGON) {
             List<ModelPart> roots = parts(model);
             Set<ModelPart> nested = Collections.newSetFromMap(new IdentityHashMap<>());
             for (ModelPart root : roots) root.traverse().skip(1).forEach(nested::add);
-            for (ModelPart root : roots) if (!nested.contains(root)) root.render(matrices, vertices, 0xF000F0, 0);
+            for (ModelPart root : roots)
+                if (!nested.contains(root)) root.render(matrices, vertices, 0xF000F0, OverlayTexture.DEFAULT_UV);
         } else {
-            model.render(matrices, vertices, 0xF000F0, 0);
+            model.render(matrices, vertices, 0xF000F0, OverlayTexture.DEFAULT_UV);
         }
         matrices.pop();
     }
@@ -245,7 +262,8 @@ final class LegacyMobRenderer {
                 try {
                     field.setAccessible(true);
                     if (field.get(model) instanceof ModelPart part && !result.contains(part)) result.add(part);
-                } catch (ReflectiveOperationException | RuntimeException ignored) { }
+                } catch (ReflectiveOperationException | RuntimeException ignored) {
+                }
             }
         }
         return result;

@@ -145,11 +145,16 @@ final class FureverConfigScreen {
     }
 
     private static MobChoice parseMob(String input, MobChoice fallback) {
-        String key = input.trim().toUpperCase(Locale.ROOT).replace(' ', '_');
+        String name = input.trim();
+        String key = name.toUpperCase(Locale.ROOT).replace(' ', '_');
         if (key.equals("FOX")) return MobChoice.FOX;
         if (key.equals("NEOFORGE_FOX")) return MobChoice.SPRITE_FOX;
         try { return MobChoice.valueOf(key); }
-        catch (IllegalArgumentException ignored) { return fallback; }
+        catch (IllegalArgumentException ignored) { }
+        for (MobChoice choice : MobChoice.available()) {
+            if (translatable(choice.displayNameKey()).getString().equalsIgnoreCase(name)) return choice;
+        }
+        return fallback;
     }
 
     private static MobTextureVariant parseVariant(String input, List<MobTextureVariant> variants,

@@ -23,12 +23,12 @@ abstract class SplashOverlayMixin {
     //? if >=26.1 {
     /*@Inject(method = "extractRenderState", at = @At("TAIL"))
     private void furever$renderFox(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
-        if (FureverConfig.get().shouldRenderOnLoadingScreen(LoadingOverlay.class)) FureverRenderer.render(context);
+        if (FureverConfig.get().shouldRenderOnLoadingScreen(LoadingOverlay.class)) FureverRenderer.renderLoading(context);
     }
     *///? } else {
     @Inject(method = "render", at = @At("TAIL"))
     private void furever$renderFox(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
-        if (FureverConfig.get().shouldRenderOnLoadingScreen(SplashOverlay.class)) FureverRenderer.render(context);
+        if (FureverConfig.get().shouldRenderOnLoadingScreen(SplashOverlay.class)) FureverRenderer.renderLoading(context);
     }
     //? }
 }

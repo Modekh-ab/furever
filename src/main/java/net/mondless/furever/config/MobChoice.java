@@ -4,8 +4,10 @@ package net.mondless.furever.config;
 /*import net.minecraft.world.entity.EntityType;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.network.chat.Component;
 *///? } else {
 import net.minecraft.entity.EntityType;
+import net.minecraft.text.Text;
 //? }
 import java.util.Arrays;
 import java.util.List;
@@ -46,6 +48,15 @@ public enum MobChoice {
 
     public String displayNameKey() {
         return this == SPRITE_FOX ? "text.furever.mob.sprite_fox" : "entity.minecraft." + id();
+    }
+
+    @Override
+    public String toString() {
+        //? if >=26.1 {
+        /*return Component.translatable(displayNameKey()).getString();
+        *///? } else {
+        return Text.translatable(displayNameKey()).getString();
+        //? }
     }
 
     public boolean isAvailable() {

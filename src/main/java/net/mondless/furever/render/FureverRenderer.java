@@ -25,6 +25,7 @@ import java.util.EnumSet;
 public final class FureverRenderer {
     private static final Logger LOGGER = LoggerFactory.getLogger("furever");
     private static final EnumSet<MobChoice> failedModels = EnumSet.noneOf(MobChoice.class);
+    private static final EnumSet<MobChoice> loggedLoadingFailures = EnumSet.noneOf(MobChoice.class);
     //? if >=26.1 {
     /*private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath("furever", "textures/gui/running_fox.png");
     *///? } else {
@@ -47,6 +48,22 @@ public final class FureverRenderer {
     *///? } else {
     public static void render(DrawContext context) {
     //? }
+        render(context, false);
+    }
+
+    //? if >=26.1 {
+    /*public static void renderLoading(GuiGraphicsExtractor context) {
+    *///? } else {
+    public static void renderLoading(DrawContext context) {
+    //? }
+        render(context, true);
+    }
+
+    //? if >=26.1 {
+    /*private static void render(GuiGraphicsExtractor context, boolean loading) {
+    *///? } else {
+    private static void render(DrawContext context, boolean loading) {
+    //? }
         FureverConfig config = FureverConfig.get();
         //? if >=26.1 {
         /*int screenWidth = context.guiWidth();
@@ -56,12 +73,17 @@ public final class FureverRenderer {
         int screenHeight = context.getScaledWindowHeight();
         //? }
         if (screenWidth <= 0 || screenHeight <= 0) return;
-        if (config.mob != MobChoice.SPRITE_FOX && !failedModels.contains(config.mob)) {
+        if (config.mob != MobChoice.SPRITE_FOX && (loading || !failedModels.contains(config.mob))) {
             try {
                 if (VanillaMobRenderer.render(context, config.mob, screenWidth, screenHeight, config)) return;
             } catch (RuntimeException exception) {
-                failedModels.add(config.mob);
-                LOGGER.error("Vanilla {} model could not be rendered; falling back to the original fox sprite", config.mob, exception);
+                if (loading) {
+                    if (loggedLoadingFailures.add(config.mob))
+                        LOGGER.debug("Vanilla {} model is not ready during resource loading", config.mob, exception);
+                } else {
+                    failedModels.add(config.mob);
+                    LOGGER.error("Vanilla {} model could not be rendered; falling back to the original fox sprite", config.mob, exception);
+                }
             }
         }
 

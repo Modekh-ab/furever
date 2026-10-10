@@ -89,6 +89,7 @@ import net.minecraft.client.model.Dilation;
 import net.minecraft.client.model.ModelPart;
 import net.minecraft.client.model.TexturedModelData;
 import net.minecraft.client.render.RenderLayer;
+import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.entity.model.BeeEntityModel;
 import net.minecraft.client.render.entity.model.CreeperEntityModel;
@@ -817,19 +818,19 @@ public final class VanillaMobRenderer {
             texture = Identifier.of("minecraft", variant.texturePath(baby));
         MatrixStack matrices = context.getMatrices();
         matrices.push();
-        matrices.translate(centerX, centerY + size * 0.5F + (mob == MobChoice.BEE ? Math.sin(time * 5.0F) * 5.0F : 0.0F), 200.0F);
+        matrices.translate(centerX, centerY - size * 0.5F + (mob == MobChoice.BEE ? Math.sin(time * 5.0F) * 5.0F : 0.0F), 200.0F);
         if (mob == MobChoice.SLIME) {
             float squish = slimeSquish(time);
             float width = size * (1.0F - squish * 0.45F);
-            matrices.scale(width, -size * (1.0F + squish * 0.70F), width);
+            matrices.scale(width, size * (1.0F + squish * 0.70F), width);
         } else {
-            matrices.scale(size, -size, size);
+            matrices.scale(size, size, size);
         }
         matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(-cameraAngle));
-        matrices.multiply(RotationAxis.POSITIVE_Y.rotation(-facing));
+        matrices.multiply(RotationAxis.POSITIVE_Y.rotation(facing));
         RenderLayer layer = mob == MobChoice.SLIME
                 ? RenderLayer.getEntityTranslucent(texture) : RenderLayer.getEntityCutoutNoCull(texture);
-        model.render(matrices, provider.getBuffer(layer), 0xF000F0, 0);
+        model.render(matrices, provider.getBuffer(layer), 0xF000F0, OverlayTexture.DEFAULT_UV);
         if (mob == MobChoice.SHEEP) {
             if (sheepWoolModel == null) sheepWoolModel = SheepWoolEntityModel.getTexturedModelData().createModel();
             sheepWoolModel.traverse().forEach(ModelPart::resetTransform);
@@ -837,7 +838,7 @@ public final class VanillaMobRenderer {
             DyeColor woolColor = variant == null ? DyeColor.WHITE
                     : DyeColor.valueOf(variant.id().toUpperCase(java.util.Locale.ROOT));
             sheepWoolModel.render(matrices, provider.getBuffer(RenderLayer.getEntityCutoutNoCull(SHEEP_WOOL_TEXTURE)),
-                    0xF000F0, 0, 0xFF000000 | woolColor.getEntityColor());
+                    0xF000F0, OverlayTexture.DEFAULT_UV, 0xFF000000 | woolColor.getEntityColor());
         }
         matrices.pop();
     }
